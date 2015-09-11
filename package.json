@@ -1,6 +1,6 @@
 {
   "name": "virtual-scope",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A library for manipulating scopes without having to worry about conflicting names",
   "main": "lib/Scope.js",
   "jsnext:main": "src/Scope.js",
