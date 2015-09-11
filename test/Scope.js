@@ -17,6 +17,22 @@ describe( 'Scope', function () {
 		assert.equal( scope.lookup( 'b' ), scope.lookup( 'a' ) );
 	});
 
+	it( 'can create unique references', function () {
+		const scope = new Scope();
+
+		// Create a unique reference to an automatically deconflicted,
+		// un-lookup-able identifier.
+		const something = scope.uniqueReference();
+
+		// Bind the local variable 'b' to the unique reference.
+		scope.bind( 'b', something );
+
+		scope.deconflict();
+
+		// 'b' isn't a used name within the scope. It's bound to 'unique'.
+		assert.deepEqual( scope.usedNames(), [ 'unique' ] );
+	});
+
 	describe( 'parent:', function () {
 		const parent = new Scope();
 		const child = new Scope( parent );

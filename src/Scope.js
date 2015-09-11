@@ -143,6 +143,14 @@ export default class Scope {
 		return keys( this.used ).sort();
 	}
 
+	// Returns a reference to a unique identifier.
+	// It cannot be looked up in any scope.
+	uniqueReference ( id ) {
+		const index = this.ids.push( id || new Identifier( 'unique' ) ) - 1;
+
+		return new Reference( this, index );
+	}
+
 	// Create and return a virtual `Scope` instance, bound to
 	// the actual scope of `this`, optionally inherit the parent scope.
 	virtual ( inheritParent ) {
