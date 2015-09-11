@@ -1,3 +1,5 @@
+export { default as unique } from './unique';
+
 const create = Object.create;
 const keys = Object.keys;
 

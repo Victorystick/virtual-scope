@@ -1,6 +1,10 @@
 import assert from 'assert';
 
 import Scope from '../src/Scope';
+import unique from '../src/unique';
+
+const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+const letters = alphabet + alphabet.toUpperCase();
 
 describe( 'Scope', function () {
 	it( 'can define and bind names', function () {
@@ -116,11 +120,29 @@ describe( 'Scope', function () {
 				return (num++).toString(36);
 			});
 
-			assert.deepEqual( real.usedNames(), 'abcdefghijklmnopqrstuvwxyz'.split('') );
+			assert.deepEqual( real.usedNames(), alphabet );
 
 			// Deconflicting twice has no additional effect.
 			real.deconflict();
-			assert.deepEqual( real.usedNames(), 'abcdefghijklmnopqrstuvwxyz'.split('') );
+			assert.deepEqual( real.usedNames(), alphabet );
+		});
+
+		it( 'mangling deconfliction', function () {
+			for (let i = 0; i < 10000; i++) {
+				// Maximal conflicts: Create 10,000 scopes, all of which define 'a'.
+				real.virtual().define( 'a' );
+			}
+
+			real.deconflict( unique() );
+
+			const names = Object.keys( real.used );
+
+			// It starts out with the alphabet.
+			assert.deepEqual( names.slice( 0, 52 ), letters );
+
+			assert.equal( names[ 52 ] , '$' );
+			assert.equal( names[ 106 ] , '$1' );
+			assert.equal( names[ 5398 ] , '$z1' );
 		});
 	});
 
