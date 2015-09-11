@@ -1,5 +1,6 @@
 const create = Object.create;
 const keys = Object.keys;
+const isArray = Array.isArray;
 
 // A minimal `Identifier` implementation. Anything that has an `originalName`,
 // and a mutable `name` property can be used as an `Identifier`.
@@ -8,18 +9,20 @@ function Identifier ( name ) {
 }
 
 // A reference to an `Identifier`.
-function Reference ( scope, index ) {
-	this.scope = scope;
+function Reference ( ids, index ) {
+	this.ids = ids;
 	this.index = index;
 }
 
 // Dereferences a `Reference`.
-function dereference ( ref ) {
-	return ref.scope.ids[ ref.index ];
+function dereference ( scope, [ depth, index ] ) {
+	while ( depth-- ) scope = scope.parent;
+
+	return scope.ids[ index ];
 }
 
 function isntReference ( id ) {
-	return !( id instanceof Reference );
+	return !isArray( id );
 }
 
 // Prefix the argument with '_'.
@@ -36,27 +39,44 @@ export default class Scope {
 
 		this.parent = parent || null;
 		this.used = create(null);
+
+		this.isDeconflicted = false;
 	}
 
 	// Binds the `name` to the given reference `ref`.
 	bind ( name, ref ) {
-		this.ids[ this.index( name ) ] = ref;
+		let scope = this;
+		let depth = 0;
+
+		while ( ref.ids !== scope.ids ) {
+			if ( !scope.parent ) throw new Error( `Reference not in scope!` );
+
+			scope = scope.parent;
+			depth += 1;
+		}
+
+		this.ids[ this.index( name ) ] = [ depth, ref.index ];
 	}
 
 	// Deconflict all names within the scope,
 	// using the given renaming function.
 	// If no function is supplied, `underscorePrefix` is used.
 	deconflict ( rename = underscorePrefix ) {
+		if ( this.isDeconflicted ) return;
+		this.isDeconflicted = true;
+
 		const names = this.used;
 
-		this.ids.filter( ref => ref instanceof Reference ).forEach( ref => {
+		this.ids.filter( isArray ).forEach( ref => {
+			const [ depth ] = ref;
+
 			// Same scope.
-			if ( ref.scope.ids === this.ids ) return;
+			if ( !depth ) return;
 
 			// Another scope!
-			while ( ref instanceof Reference ) {
+			do {
 				ref = dereference( ref );
-			}
+			} while ( isArray( ref ) );
 
 			names[ ref.name ] = ref;
 		});
@@ -125,8 +145,8 @@ export default class Scope {
 
 		let id = this.ids[ this.names[ name ] ];
 
-		while ( id instanceof Reference ) {
-			id = dereference( id );
+		if ( isArray( id ) ) {
+			id = dereference( this, id );
 		}
 
 		return id;
@@ -134,7 +154,7 @@ export default class Scope {
 
 	// Get a reference to the identifier `name` in this scope.
 	reference ( name ) {
-		return new Reference( this, this.index( name ) );
+		return new Reference( this.ids, this.index( name ) );
 	}
 
 	// Return the used names of the scope.
