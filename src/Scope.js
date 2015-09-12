@@ -144,9 +144,10 @@ export default class Scope {
 	}
 
 	// Returns a reference to a unique identifier.
-	// It cannot be looked up in any scope.
-	uniqueReference ( id ) {
-		const index = this.ids.push( id || new Identifier( 'unique' ) ) - 1;
+	// It can only be looked up through bindings to the returned identifier.
+	uniqueReference ( id = 'unique' ) {
+		id = typeof id === 'string' ? new Identifier( id ) : id;
+		const index = this.ids.push( id ) - 1;
 
 		return new Reference( this, index );
 	}
